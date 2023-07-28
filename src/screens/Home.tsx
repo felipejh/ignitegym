@@ -1,11 +1,27 @@
-import { ReactElement } from 'react';
-import { Center, Text } from 'native-base'
+import { ReactElement, useState } from 'react'
+import { VStack, HStack } from 'native-base'
+import { Group, HomeHeader } from '@components'
 
 function Home(): ReactElement {
+  const [groupSelected, setGroupSelected] = useState('costas')
+
   return (
-    <Center flex={1}>
-      <Text color="white">Home</Text>
-    </Center>
+    <VStack flex={1}>
+      <HomeHeader />
+
+      <HStack>
+        <Group
+          name="costas"
+          isActive={groupSelected === 'costas'}
+          onPress={() => setGroupSelected('costas')}
+        />
+        <Group
+          name="ombro"
+          isActive={groupSelected === 'ombro'}
+          onPress={() => setGroupSelected('ombro')}
+        />
+      </HStack>
+    </VStack>
   )
 }
 
