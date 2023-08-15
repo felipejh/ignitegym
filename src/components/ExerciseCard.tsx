@@ -25,7 +25,7 @@ function ExerciseCard({ ...rest }: ExerciseCardProps): ReactElement {
           h={16}
           rounded="md"
           mr={4}
-          resizeMode="center"
+          resizeMode="cover"
         />
 
         <VStack flex={1}>
