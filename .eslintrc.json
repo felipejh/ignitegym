@@ -41,6 +41,8 @@
     "react/jsx-props-no-spreading": "off",
     "react/require-default-props": "off",
     "prefer-destructuring": ["error", { "object": true, "array": false }],
-    "react/no-unstable-nested-components": ["error", { "allowAsProps": true }]
+    "react/no-unstable-nested-components": ["error", { "allowAsProps": true }],
+    "no-useless-return": "off",
+    "import/no-extraneous-dependencies": "off"
   }
 }
