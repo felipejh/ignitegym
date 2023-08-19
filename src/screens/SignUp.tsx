@@ -2,6 +2,8 @@ import { ReactElement } from 'react'
 import { VStack, Image, Text, Center, Heading, ScrollView } from 'native-base'
 import { useNavigation } from '@react-navigation/native'
 import { useForm, Controller } from 'react-hook-form'
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
 
 import LogoSvg from '@assets/logo.svg'
 import BackgroundImg from '@assets/background.png'
@@ -15,9 +17,28 @@ interface FormValues {
   password_confirm: string
 }
 
+const signUpSchema = yup.object({
+  name: yup.string().required('Informe o nome'),
+  email: yup.string().email('E-mail inválido').required('Informe o e-mail'),
+  password: yup
+    .string()
+    .required('Informe a senha')
+    .min(6, 'A senha deve conter no mínimo 6 dígitos'),
+  password_confirm: yup
+    .string()
+    .required('Confirme a senha')
+    .oneOf([yup.ref('password'), ''], 'As senhas não conferem'),
+})
+
 function SignUp(): ReactElement {
   const navigation = useNavigation()
-  const { control, handleSubmit } = useForm<FormValues>()
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: yupResolver(signUpSchema),
+  })
 
   const handleGoBack = (): void => navigation.goBack()
 
@@ -56,7 +77,12 @@ function SignUp(): ReactElement {
             name="name"
             control={control}
             render={({ field: { onChange, value } }) => (
-              <Input placeholder="Nome" onChangeText={onChange} value={value} />
+              <Input
+                placeholder="Nome"
+                onChangeText={onChange}
+                value={value}
+                errorMessage={errors.name?.message}
+              />
             )}
           />
 
@@ -70,6 +96,7 @@ function SignUp(): ReactElement {
                 autoCapitalize="none"
                 onChangeText={onChange}
                 value={value}
+                errorMessage={errors.email?.message}
               />
             )}
           />
@@ -83,6 +110,7 @@ function SignUp(): ReactElement {
                 secureTextEntry
                 onChangeText={onChange}
                 value={value}
+                errorMessage={errors.password?.message}
               />
             )}
           />
@@ -98,6 +126,7 @@ function SignUp(): ReactElement {
                 value={value}
                 onSubmitEditing={handleSubmit(handleSignUp)}
                 returnKeyType="send"
+                errorMessage={errors.password_confirm?.message}
               />
             )}
           />

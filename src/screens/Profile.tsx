@@ -103,6 +103,7 @@ function Profile(): ReactElement {
           mb={2}
           mt={12}
           alignSelf="flex-start"
+          fontFamily="heading"
         >
           Alterar senha
         </Heading>
