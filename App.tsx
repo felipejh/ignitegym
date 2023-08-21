@@ -8,7 +8,7 @@ import {
 
 import Routes from '@routes/index'
 
-import { AuthContext } from '@contexts/AuthContext'
+import { AuthContextProvider } from '@contexts/AuthContext'
 
 import { THEME } from './src/theme'
 
@@ -22,16 +22,9 @@ export default function App() {
         backgroundColor="transparent"
         translucent
       />
-      <AuthContext.Provider
-        value={{
-          id: '1',
-          name: 'Felipe',
-          email: 'felipe@gmail.com',
-          avatar: 'felipe.png',
-        }}
-      >
+      <AuthContextProvider>
         {fontsLoaded ? <Routes /> : <View />}
-      </AuthContext.Provider>
+      </AuthContextProvider>
     </NativeBaseProvider>
   )
 }
