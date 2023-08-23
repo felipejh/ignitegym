@@ -1,5 +1,13 @@
-import { ReactElement } from 'react'
-import { VStack, Image, Text, Center, Heading, ScrollView } from 'native-base'
+import { ReactElement, useState } from 'react'
+import {
+  VStack,
+  Image,
+  Text,
+  Center,
+  Heading,
+  ScrollView,
+  useToast,
+} from 'native-base'
 import { useNavigation } from '@react-navigation/native'
 import * as yup from 'yup'
 
@@ -11,6 +19,8 @@ import { Button, Input } from '@components'
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
 import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { useAuth } from '@hooks/useAuth'
+import { AppError } from '@utils/AppError'
 
 type FormValues = {
   email: string
@@ -27,6 +37,9 @@ const singInSchema = yup.object({
 
 function SignIn(): ReactElement {
   const navigation = useNavigation<AuthNavigatorRoutesProps>()
+  const { signIn } = useAuth()
+  const toast = useToast()
+  const [isLoading, setIsLoading] = useState(false)
   const {
     control,
     handleSubmit,
@@ -35,8 +48,29 @@ function SignIn(): ReactElement {
 
   const handleNewAccount = (): void => navigation.navigate('signUp')
 
-  const handleSignIn = (formValues: FormValues): void => {
-    console.log(formValues)
+  const handleSignIn = async ({
+    email,
+    password,
+  }: FormValues): Promise<void> => {
+    try {
+      setIsLoading(true)
+
+      await signIn({ email, password })
+    } catch (error) {
+      const isAppError = error instanceof AppError
+
+      const title = isAppError
+        ? error.message
+        : 'Não foi possível entrar. Tente novamente mais tarde.'
+
+      setIsLoading(false)
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    }
   }
 
   return (
@@ -94,7 +128,11 @@ function SignIn(): ReactElement {
               />
             )}
           />
-          <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
+          <Button
+            title="Acessar"
+            onPress={handleSubmit(handleSignIn)}
+            isLoading={isLoading}
+          />
         </Center>
 
         <Center mt={24}>

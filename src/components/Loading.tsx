@@ -1,8 +1,12 @@
 import { ReactElement } from 'react'
-import { Spinner } from 'native-base'
+import { Center, Spinner } from 'native-base'
 
 function Loading(): ReactElement {
-  return <Spinner />
+  return (
+    <Center flex={1} bgColor="gray.700">
+      <Spinner color="green.500" />
+    </Center>
+  )
 }
 
 export default Loading
