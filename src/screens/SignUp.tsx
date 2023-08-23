@@ -8,12 +8,10 @@ import {
   ScrollView,
   useToast,
 } from 'native-base'
-import { Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
-import axios from 'axios'
 
 import { api } from '@services/api'
 
@@ -23,6 +21,7 @@ import LogoSvg from '@assets/logo.svg'
 import BackgroundImg from '@assets/background.png'
 
 import { Button, Input } from '@components'
+import { useAuth } from '@hooks/useAuth'
 
 interface FormValues {
   name: string
@@ -47,6 +46,8 @@ const signUpSchema = yup.object({
 function SignUp(): ReactElement {
   const navigation = useNavigation()
   const toast = useToast()
+  const { signIn } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const {
     control,
     handleSubmit,
@@ -61,7 +62,11 @@ function SignUp(): ReactElement {
     const { name, email, password } = formValues
 
     try {
-      const { data } = await api.post('users', { name, email, password })
+      setIsLoading(true)
+
+      await api.post('users', { name, email, password })
+
+      await signIn({ email, password })
     } catch (error) {
       const isAppError = error instanceof AppError
       const title = isAppError
@@ -73,6 +78,8 @@ function SignUp(): ReactElement {
         placement: 'top',
         bgColor: 'red.500',
       })
+
+      setIsLoading(false)
     }
   }
 
@@ -163,6 +170,7 @@ function SignUp(): ReactElement {
           <Button
             title="Criar e acessar"
             onPress={handleSubmit(handleSignUp)}
+            isLoading={isLoading}
           />
         </Center>
 
