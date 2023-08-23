@@ -19,9 +19,7 @@
     "import/resolver": {
       "typescript": {}
     },
-    "import/core-modules": [
-      "@expo/vector-icons"
-    ]
+    "import/core-modules": ["@expo/vector-icons"]
   },
   "plugins": ["react", "@typescript-eslint"],
   "rules": {
@@ -44,6 +42,19 @@
     "react/no-unstable-nested-components": ["error", { "allowAsProps": true }],
     "no-useless-return": "off",
     "import/no-extraneous-dependencies": "off",
-    "no-useless-catch": "off"
+    "no-useless-catch": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "varsIgnorePattern": "^_",
+        "args": "all",
+        "argsIgnorePattern": "^_",
+        "caughtErrors": "all",
+        "caughtErrorsIgnorePattern": "^_",
+        "ignoreRestSiblings": false
+      }
+    ]
   }
 }

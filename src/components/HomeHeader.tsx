@@ -11,6 +11,7 @@ import defaultUserPhotoImg from '@assets/userPhotoDefault.png'
 function HomeHeader(): ReactElement {
   const {
     user: { name, avatar },
+    signOut,
   } = useAuth()
 
   return (
@@ -30,7 +31,7 @@ function HomeHeader(): ReactElement {
         </Heading>
       </VStack>
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={signOut}>
         <Icon as={MaterialIcons} name="logout" color="gray.200" size={7} />
       </TouchableOpacity>
     </HStack>
