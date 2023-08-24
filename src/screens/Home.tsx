@@ -1,14 +1,17 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useEffect, useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
-import { VStack, FlatList, HStack, Heading, Text } from 'native-base'
+import { VStack, FlatList, HStack, Heading, Text, useToast } from 'native-base'
 
 import { ExerciseCard, Group, HomeHeader } from '@components'
 
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
+import { AppError } from '@utils/AppError'
+import { api } from '@services/api'
 
 function Home(): ReactElement {
   const navigation = useNavigation<AppNavigatorRoutesProps>()
-  const [groups, setGroups] = useState(['Costas', 'Ombro', 'Tríceps', 'bíceps'])
+  const toast = useToast()
+  const [groups, setGroups] = useState<Array<string>>([])
   const [groupSelected, setGroupSelected] = useState('Costas')
   const [exercises, setExercises] = useState([
     'Puxada frontal',
@@ -16,6 +19,25 @@ function Home(): ReactElement {
     'Remada unilateral',
     'Levantamento terra',
   ])
+
+  const fetchGroups = async (): Promise<void> => {
+    try {
+      const { data } = await api.get('/groups')
+
+      setGroups(data)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Ocorreu um erro ao buscar os grupos musculares.'
+
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
+    }
+  }
+
+  useEffect(() => {
+    fetchGroups()
+  }, [fetchGroups])
 
   const handleOpenExerciseDetails = (): void => {
     navigation.navigate('exercise')
