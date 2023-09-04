@@ -1,7 +1,12 @@
 import { ReactElement } from 'react'
 import { HStack, Heading, Text, VStack } from 'native-base'
+import { HistoryDTO } from '@dtos/HistoryDTO'
 
-function HistoryCard(): ReactElement {
+type HistoryCardProp = {
+  data: HistoryDTO
+}
+
+function HistoryCard({ data }: HistoryCardProp): ReactElement {
   return (
     <HStack
       w="full"
@@ -20,11 +25,11 @@ function HistoryCard(): ReactElement {
           textTransform="capitalize"
           fontFamily="heading"
         >
-          Costas
+          {data.group}
         </Heading>
 
         <Text color="gray.100" fontSize="lg" numberOfLines={1}>
-          Puxada frontal
+          {data.name}
         </Text>
       </VStack>
       <Text color="gray.300" fontSize="md">

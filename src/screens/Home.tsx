@@ -1,24 +1,21 @@
-import { ReactElement, useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native'
+import { ReactElement, useCallback, useEffect, useState } from 'react'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { VStack, FlatList, HStack, Heading, Text, useToast } from 'native-base'
 
-import { ExerciseCard, Group, HomeHeader } from '@components'
+import { ExerciseCard, Group, HomeHeader, Loading } from '@components'
 
 import { AppNavigatorRoutesProps } from '@routes/app.routes'
 import { AppError } from '@utils/AppError'
 import { api } from '@services/api'
+import { ExerciseDTO } from '@dtos/ExerciseDTO'
 
 function Home(): ReactElement {
   const navigation = useNavigation<AppNavigatorRoutesProps>()
   const toast = useToast()
+  const [isLoading, setIsLoading] = useState(false)
   const [groups, setGroups] = useState<Array<string>>([])
-  const [groupSelected, setGroupSelected] = useState('Costas')
-  const [exercises, setExercises] = useState([
-    'Puxada frontal',
-    'Remada curvada',
-    'Remada unilateral',
-    'Levantamento terra',
-  ])
+  const [groupSelected, setGroupSelected] = useState('antebraço')
+  const [exercises, setExercises] = useState<Array<ExerciseDTO>>([])
 
   const fetchGroups = async (): Promise<void> => {
     try {
@@ -35,12 +32,37 @@ function Home(): ReactElement {
     }
   }
 
+  const fetchExercisesByGroup = async (): Promise<void> => {
+    try {
+      setIsLoading(true)
+
+      const { data } = await api.get(`exercises/bygroup/${groupSelected}`)
+
+      setExercises(data)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Ocorreu um erro ao buscar os exercícios.'
+
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchGroups()
-  }, [fetchGroups])
+  }, [])
 
-  const handleOpenExerciseDetails = (): void => {
-    navigation.navigate('exercise')
+  useFocusEffect(
+    useCallback(() => {
+      fetchExercisesByGroup()
+    }, [groupSelected]),
+  )
+
+  const handleOpenExerciseDetails = (exerciseId: string): void => {
+    navigation.navigate('exercise', { exerciseId })
   }
 
   return (
@@ -67,27 +89,34 @@ function Home(): ReactElement {
         minH={10}
       />
 
-      <VStack flex={1} px={8}>
-        <HStack justifyContent="space-between" mb={5}>
-          <Heading color="gray.200" fontSize="md" fontFamily="heading">
-            Exercícios
-          </Heading>
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <VStack flex={1} px={8}>
+          <HStack justifyContent="space-between" mb={5}>
+            <Heading color="gray.200" fontSize="md" fontFamily="heading">
+              Exercícios
+            </Heading>
 
-          <Text color="gray.200" fontSize="sm">
-            {exercises.length}
-          </Text>
-        </HStack>
+            <Text color="gray.200" fontSize="sm">
+              {exercises.length}
+            </Text>
+          </HStack>
 
-        <FlatList
-          data={exercises}
-          keyExtractor={item => item}
-          renderItem={({ item }) => (
-            <ExerciseCard onPress={handleOpenExerciseDetails} />
-          )}
-          showsVerticalScrollIndicator={false}
-          _contentContainerStyle={{ pb: 20 }}
-        />
-      </VStack>
+          <FlatList
+            data={exercises}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <ExerciseCard
+                onPress={() => handleOpenExerciseDetails(item.id)}
+                data={item}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+            _contentContainerStyle={{ pb: 20 }}
+          />
+        </VStack>
+      )}
     </VStack>
   )
 }

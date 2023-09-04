@@ -13,7 +13,7 @@ import HistorySvg from '@assets/history.svg'
 import ProfileSvg from '@assets/profile.svg'
 
 type AppRoutesType = {
-  exercise: undefined
+  exercise: { exerciseId: string }
   home: undefined
   history: undefined
   profile: undefined

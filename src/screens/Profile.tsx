@@ -9,15 +9,67 @@ import {
   useToast,
 } from 'native-base'
 import { TouchableOpacity } from 'react-native'
+import { Controller, useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
 import * as ImagePicker from 'expo-image-picker'
 import * as FileSystem from 'expo-file-system'
+import * as yup from 'yup'
 
 import { Button, Input, ScreenHeader, UserPhoto } from '@components'
+import { useAuth } from '@hooks/useAuth'
+import { AppError } from '@utils/AppError'
+import { api } from '@services/api'
 
 const PHOTO_SIZE = 33
 
+type FormValues = {
+  name: string
+  email: string
+  password: string | undefined | null
+  old_password: string | undefined
+  confirm_password: string | undefined | null
+}
+
+const profileSchema = yup.object({
+  name: yup.string().required('Informe o nome'),
+  email: yup.string().required(),
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter pelo menos 6 dígitos')
+    .nullable()
+    .transform(value => value || null),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform(value => value || null)
+    .oneOf([yup.ref('password'), ''], 'A confirmação de senha não confere')
+    .when('password', {
+      is: (Field: any) => Field,
+      then: schema =>
+        schema
+          .nullable()
+          .required('Informe a confirmação da senha')
+          .transform(value => value || null),
+    }),
+  old_password: yup.string(),
+})
+
 function Profile(): ReactElement {
   const toast = useToast()
+  const { user, updateUserProfile } = useAuth()
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      name: user.name,
+      email: user.email,
+    },
+    resolver: yupResolver(profileSchema),
+  })
+
+  const [isUpdating, setIsUpdating] = useState(false)
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
   const [userPhoto, setUserPhoto] = useState('https://github.com/felipejh.png')
 
@@ -52,11 +104,44 @@ function Profile(): ReactElement {
         setUserPhoto(photoSelected.assets[0].uri)
       }
     } catch (error) {
-      console.log(error)
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Ocorreu um erro ao atualizar os dados.'
+
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
     } finally {
       setPhotoIsLoading(false)
     }
   }
+
+  const handleProfileUpdate = async (formValues: FormValues): Promise<void> => {
+    try {
+      setIsUpdating(true)
+
+      await api.put(`users`, formValues)
+
+      const userUpdated = user
+      userUpdated.name = formValues.name
+      await updateUserProfile(userUpdated)
+
+      toast.show({
+        title: 'Perfil atualizado com sucesso.',
+        placement: 'top',
+        bgColor: 'green.700',
+      })
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Ocorreu um erro ao atualizar os dados.'
+
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
     <VStack flex={1}>
       <ScreenHeader title="Perfil" />
@@ -93,8 +178,33 @@ function Profile(): ReactElement {
             </Text>
           </TouchableOpacity>
 
-          <Input bg="gray.600" placeholder="Nome" />
-          <Input bg="gray.600" placeholder="E-mail" isDisabled />
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Nome"
+                value={value}
+                onChangeText={onChange}
+                errorMessage={errors.name?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { value, onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="E-mail"
+                isDisabled
+                value={value}
+                onChangeText={onChange}
+              />
+            )}
+          />
         </Center>
 
         <Heading
@@ -108,15 +218,53 @@ function Profile(): ReactElement {
           Alterar senha
         </Heading>
 
-        <Input bg="gray.600" placeholder="Senha atual" secureTextEntry />
-        <Input bg="gray.600" placeholder="Nova senha" secureTextEntry />
-        <Input
-          bg="gray.600"
-          placeholder="Confirme a nova senha"
-          secureTextEntry
+        <Controller
+          control={control}
+          name="old_password"
+          render={({ field: { onChange } }) => (
+            <Input
+              bg="gray.600"
+              placeholder="Senha atual"
+              secureTextEntry
+              onChangeText={onChange}
+            />
+          )}
         />
 
-        <Button title="Atualizar" mt={4} />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange } }) => (
+            <Input
+              bg="gray.600"
+              placeholder="Nova senha"
+              secureTextEntry
+              onChangeText={onChange}
+              errorMessage={errors.password?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="confirm_password"
+          render={({ field: { onChange } }) => (
+            <Input
+              bg="gray.600"
+              placeholder="Confirme a nova senha"
+              secureTextEntry
+              onChangeText={onChange}
+              errorMessage={errors.confirm_password?.message}
+            />
+          )}
+        />
+
+        <Button
+          title="Atualizar"
+          mt={4}
+          isLoading={isUpdating}
+          onPress={handleSubmit(handleProfileUpdate)}
+        />
       </ScrollView>
     </VStack>
   )

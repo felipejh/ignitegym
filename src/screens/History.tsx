@@ -1,23 +1,43 @@
-import { ReactElement, useState } from 'react'
-import { Heading, VStack, SectionList, Text } from 'native-base'
+import { ReactElement, useCallback, useState } from 'react'
+import { Heading, VStack, SectionList, Text, useToast } from 'native-base'
 import { ScreenHeader, HistoryCard } from '@components'
-
-interface ExercisesData {
-  title: string
-  data: Array<string>
-}
+import { AppError } from '@utils/AppError'
+import { api } from '@services/api'
+import { useFocusEffect } from '@react-navigation/native'
+import { HistoryByDayDTO } from '@dtos/HistoryByDayDTO'
 
 function History(): ReactElement {
-  const [exercises, setExercises] = useState<Array<ExercisesData>>([
-    {
-      title: '26.08.22',
-      data: ['Puxada frontal', 'Remada unilateral'],
-    },
-    {
-      title: '27.08.22',
-      data: ['Puxada frontal'],
-    },
-  ])
+  const toast = useToast()
+
+  const [isLoading, setIsLoading] = useState(true)
+  const [exercises, setExercises] = useState<HistoryByDayDTO[]>(
+    [] as HistoryByDayDTO[],
+  )
+
+  const fetchHistory = async (): Promise<void> => {
+    try {
+      setIsLoading(true)
+
+      const { data } = await api.get(`history`)
+
+      setExercises(data)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Ocorreu um erro ao carregar o histórico.'
+
+      toast.show({ title, placement: 'top', bgColor: 'red.500' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory()
+    }, []),
+  )
 
   return (
     <VStack flex={1}>
@@ -25,8 +45,9 @@ function History(): ReactElement {
 
       <SectionList
         sections={exercises}
-        keyExtractor={item => item}
-        renderItem={() => <HistoryCard />}
+        keyExtractor={item => item.id}
+        refreshing={isLoading}
+        renderItem={({ item }) => <HistoryCard data={item} />}
         renderSectionHeader={({ section }) => (
           <Heading
             color="gray.200"
