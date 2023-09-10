@@ -20,6 +20,8 @@ import { useAuth } from '@hooks/useAuth'
 import { AppError } from '@utils/AppError'
 import { api } from '@services/api'
 
+import defaultUserPhotoImg from '@assets/userPhotoDefault.png'
+
 const PHOTO_SIZE = 33
 
 type FormValues = {
@@ -71,7 +73,6 @@ function Profile(): ReactElement {
 
   const [isUpdating, setIsUpdating] = useState(false)
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
-  const [userPhoto, setUserPhoto] = useState('https://github.com/felipejh.png')
 
   const handleUserPhotoSelect = async (): Promise<void> => {
     setPhotoIsLoading(true)
@@ -101,7 +102,32 @@ function Profile(): ReactElement {
           return
         }
 
-        setUserPhoto(photoSelected.assets[0].uri)
+        const fileExtension = photoSelected.assets[0].uri.split('.').pop()
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`.toLowerCase(),
+          uri: photoSelected.assets[0].uri,
+          type: `${photoSelected.assets[0].type}/${fileExtension}`,
+        } as any
+
+        const userPhotoUploadForm = new FormData()
+        userPhotoUploadForm.append('avatar', photoFile)
+
+        const { data } = await api.patch('users/avatar', userPhotoUploadForm, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+
+        const userUpdated = user
+        userUpdated.avatar = data.avatar
+        updateUserProfile(userUpdated)
+
+        toast.show({
+          title: 'Foto atualizada!',
+          placement: 'top',
+          bgColor: 'green.500',
+        })
       }
     } catch (error) {
       const isAppError = error instanceof AppError
@@ -161,7 +187,11 @@ function Profile(): ReactElement {
             />
           ) : (
             <UserPhoto
-              source={{ uri: userPhoto }}
+              source={
+                user.avatar
+                  ? { uri: `${api.defaults.baseURL}avatar/${user.avatar}` }
+                  : defaultUserPhotoImg
+              }
               alt="Foto do usuário"
               size={PHOTO_SIZE}
             />
