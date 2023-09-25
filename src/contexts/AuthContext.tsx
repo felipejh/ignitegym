@@ -29,6 +29,7 @@ export type AuthTypeContext = {
 type SessionResult = {
   user: UserDTO
   token: string
+  refresh_token: string
 }
 
 type AuthContextProviderProps = {
@@ -52,7 +53,10 @@ export function AuthContextProvider({
   const storageUserAndTokenSave = async (session: SessionResult) => {
     try {
       await storageUserSave(session.user)
-      await storageAuthTokenSave(session.token)
+      await storageAuthTokenSave({
+        token: session.token,
+        refresh_token: session.refresh_token,
+      })
     } catch (error) {
       throw error
     }
@@ -68,7 +72,7 @@ export function AuthContextProvider({
         password,
       })
 
-      if (data.user && data.token) {
+      if (data.user && data.token && data.refresh_token) {
         userAndTokenUpdate(data)
         await storageUserAndTokenSave(data)
       }
@@ -107,10 +111,10 @@ export function AuthContextProvider({
     try {
       setIsLoadingUserStorageData(true)
       const userLogged = await storageUserGet()
-      const token = await storageAuthTokenGet()
+      const { token, refresh_token } = await storageAuthTokenGet()
 
       if (token && userLogged) {
-        userAndTokenUpdate({ user: userLogged, token })
+        userAndTokenUpdate({ user: userLogged, token, refresh_token })
       }
     } catch (error) {
       throw error
@@ -122,6 +126,14 @@ export function AuthContextProvider({
   useEffect(() => {
     loadUserData()
   }, [])
+
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut)
+
+    return () => {
+      subscribe()
+    }
+  }, [signOut])
 
   return (
     <AuthContext.Provider
